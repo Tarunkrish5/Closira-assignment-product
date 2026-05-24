@@ -1,0 +1,137 @@
+{
+  "info": {
+    "name": "Closira Enquiry API",
+    "_postman_id": "c1051ra-0001-4000-8000-000000000001",
+    "description": "Closira backend assignment — covers all 5 endpoints with example payloads. Set the `host` and `tenant` variables in the collection, then run the requests top-to-bottom. The first POST captures the new enquiry's `job_id` into a collection variable so the follow-up / escalate / history requests can reuse it.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "host", "value": "http://localhost:8000" },
+    { "key": "tenant", "value": "tenant_demo" },
+    { "key": "enquiryId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Health check",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{host}}/health", "host": ["{{host}}"], "path": ["health"] }
+      }
+    },
+    {
+      "name": "2. Create enquiry — pricing (auto-matches pricing_question SOP)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const data = pm.response.json();",
+              "if (data && data.job_id) {",
+              "  pm.collectionVariables.set('enquiryId', data.job_id);",
+              "  console.log('Captured enquiryId:', data.job_id);",
+              "}",
+              "pm.test('returns 202 Accepted', () => pm.response.to.have.status(202));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Tenant-Id", "value": "{{tenant}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"channel\": \"whatsapp\",\n  \"customer_name\": \"Sarah M.\",\n  \"message\": \"Hi, can I get a quote for the deluxe package? How much does it cost?\"\n}"
+        },
+        "url": { "raw": "{{host}}/enquiry", "host": ["{{host}}"], "path": ["enquiry"] }
+      }
+    },
+    {
+      "name": "3. Create enquiry — complaint (priority beats pricing)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Tenant-Id", "value": "{{tenant}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"channel\": \"email\",\n  \"customer_name\": \"Rohan K.\",\n  \"message\": \"The pricing was completely wrong on my invoice. I want a refund — this is terrible.\"\n}"
+        },
+        "url": { "raw": "{{host}}/enquiry", "host": ["{{host}}"], "path": ["enquiry"] }
+      }
+    },
+    {
+      "name": "4. Create enquiry — no SOP match (auto-escalates)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Tenant-Id", "value": "{{tenant}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"channel\": \"call\",\n  \"customer_name\": \"Anita P.\",\n  \"message\": \"Just calling to say hello and check in.\"\n}"
+        },
+        "url": { "raw": "{{host}}/enquiry", "host": ["{{host}}"], "path": ["enquiry"] }
+      }
+    },
+    {
+      "name": "5. Schedule follow-up",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Tenant-Id", "value": "{{tenant}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"delay_minutes\": 60,\n  \"message_template\": \"Hi {{customer_name}}, just checking in on your enquiry.\"\n}"
+        },
+        "url": {
+          "raw": "{{host}}/enquiry/{{enquiryId}}/followup",
+          "host": ["{{host}}"],
+          "path": ["enquiry", "{{enquiryId}}", "followup"]
+        }
+      }
+    },
+    {
+      "name": "6. Escalate enquiry",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Tenant-Id", "value": "{{tenant}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"Customer asked for a senior account manager.\"\n}"
+        },
+        "url": {
+          "raw": "{{host}}/enquiry/{{enquiryId}}/escalate",
+          "host": ["{{host}}"],
+          "path": ["enquiry", "{{enquiryId}}", "escalate"]
+        }
+      }
+    },
+    {
+      "name": "7. Get enquiry history",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "X-Tenant-Id", "value": "{{tenant}}" }
+        ],
+        "url": {
+          "raw": "{{host}}/enquiry/{{enquiryId}}/history",
+          "host": ["{{host}}"],
+          "path": ["enquiry", "{{enquiryId}}", "history"]
+        }
+      }
+    }
+  ]
+}

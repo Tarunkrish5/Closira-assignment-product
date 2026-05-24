@@ -1,0 +1,114 @@
+### Closira Enquiry API — REST Client test file
+### Open in VS Code (REST Client extension) or JetBrains HTTP client.
+### Each request below can be run independently or top-to-bottom.
+
+@host = http://localhost:8000
+@tenant = tenant_demo
+
+###############################################################################
+# 1. Health check
+###############################################################################
+
+### GET /health — service liveness + DB connectivity
+GET {{host}}/health
+Accept: application/json
+
+###############################################################################
+# 2. Create an enquiry (pricing question — should auto-match)
+###############################################################################
+
+### POST /enquiry — pricing enquiry
+# @name createPricing
+POST {{host}}/enquiry
+Content-Type: application/json
+X-Tenant-Id: {{tenant}}
+
+{
+  "channel": "whatsapp",
+  "customer_name": "Sarah M.",
+  "message": "Hi, can I get a quote for the deluxe package? How much does it cost?"
+}
+
+###############################################################################
+# 3. Create an enquiry (complaint — higher priority than pricing)
+###############################################################################
+
+### POST /enquiry — complaint
+# @name createComplaint
+POST {{host}}/enquiry
+Content-Type: application/json
+X-Tenant-Id: {{tenant}}
+
+{
+  "channel": "email",
+  "customer_name": "Rohan K.",
+  "message": "The pricing was completely wrong on my invoice. I want a refund — this is terrible."
+}
+
+###############################################################################
+# 4. Create an enquiry (no SOP match — should auto-escalate)
+###############################################################################
+
+### POST /enquiry — no match, will escalate
+# @name createUnmatched
+POST {{host}}/enquiry
+Content-Type: application/json
+X-Tenant-Id: {{tenant}}
+
+{
+  "channel": "call",
+  "customer_name": "Anita P.",
+  "message": "Just calling to say hello and check in."
+}
+
+###############################################################################
+# 5. Read enquiry history (replace the UUID with one from a 202 response above)
+###############################################################################
+
+### GET /enquiry/{id}/history — full timeline
+GET {{host}}/enquiry/{{createPricing.response.body.job_id}}/history
+Accept: application/json
+X-Tenant-Id: {{tenant}}
+
+###############################################################################
+# 6. Schedule a follow-up
+###############################################################################
+
+### POST /enquiry/{id}/followup — schedule a nudge in 60 minutes
+POST {{host}}/enquiry/{{createPricing.response.body.job_id}}/followup
+Content-Type: application/json
+X-Tenant-Id: {{tenant}}
+
+{
+  "delay_minutes": 60,
+  "message_template": "Hi {{customer_name}}, just checking in on your enquiry."
+}
+
+###############################################################################
+# 7. Manually escalate
+###############################################################################
+
+### POST /enquiry/{id}/escalate — manual escalation
+POST {{host}}/enquiry/{{createPricing.response.body.job_id}}/escalate
+Content-Type: application/json
+X-Tenant-Id: {{tenant}}
+
+{
+  "reason": "Customer asked for a senior account manager."
+}
+
+###############################################################################
+# 8. Error cases — useful for verifying status codes
+###############################################################################
+
+### Bad payload (missing required fields) → 422
+POST {{host}}/enquiry
+Content-Type: application/json
+
+{
+  "channel": "smoke_signal",
+  "customer_name": ""
+}
+
+### Unknown enquiry id → 404
+GET {{host}}/enquiry/00000000-0000-0000-0000-000000000000/history
