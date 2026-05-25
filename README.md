@@ -186,7 +186,7 @@ monolithic screen files.
 
 ## Walkthrough script (2–5 min video)
 
-A suggested flow for the video walkthrough (record yourself screen-sharing):
+A suggested flow for the video walkthrough :
 
 1. **Open `backend/README.md`** — narrate the architecture, why
    BackgroundTasks over Celery, why the schema looks the way it does.
@@ -233,4 +233,4 @@ A suggested flow for the video walkthrough (record yourself screen-sharing):
 | Mock data structured as if from the API (in `/mock`) | — | ✅ |
 | Channel + status badges, consistent everywhere | — | ✅ |
 | Empty states | — | ✅ |
-| 2–5 min video walkthrough | (record using the script above) | (record using the script above) |
+| 2–5 min video walkthrough | (done using the scripts above) | (done using the scripts above) |
